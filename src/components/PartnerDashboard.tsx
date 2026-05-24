@@ -10,6 +10,7 @@ import axios from "axios";
 import { IVehicle } from "@/models/vehicle.model";
 import PricingModal from "./PricingModal";
 import PartnerEarning from "./PartnerEarning";
+import { getSocket } from "@/lib/socket";
 
 type Step = {
   id: number;
@@ -93,6 +94,41 @@ function PartnerDashboard() {
     if (step.id > activeStep) return; // only block locked (future) steps
     router.push(step.route);
   };
+
+  useEffect(() => {
+  if (!userData?._id) return; // wait until user data is loaded
+
+  const socket = getSocket();
+
+  const initSocket = () => {
+    socket.emit("identity", userData._id);
+
+    // Send location after identity
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(
+        (position) => {
+          socket.emit("update-location", {
+            userId: userData._id,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (err) => console.log("location error", err),
+        { enableHighAccuracy: true }
+      );
+    }
+  };
+
+  if (socket.connected) {
+    initSocket();
+  } else {
+    socket.on("connect", initSocket);
+  }
+
+  return () => {
+    socket.off("connect", initSocket);
+  };
+}, [userData?._id]);
 
   const progressPercentage = ((activeStep - 1) / (TOTAL_STEPS - 1)) * 100;
 
