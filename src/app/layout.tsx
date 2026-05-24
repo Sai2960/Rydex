@@ -4,6 +4,10 @@ import "./globals.css";
 import Provider from "@/lib/Provider";
 import ReduxProvider from "@/redux/ReduxProvider";
 import InitUser from "@/InitUser";
+import { auth } from "@/auth";
+import connectDb from "@/lib/db";
+import User from "@/models/user.model";
+import SocketInitializer from "@/components/SocketInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,11 +25,17 @@ export const metadata: Metadata = {
     "RYDEX ek modern multi-vendor vehicle booking platform hai jahan users aasaani se cars, bikes aur commercial vehicles book kar sakte hain. Secure login, verified owners aur transparent pricing ke saath RYDEX mobility ko simple aur reliable banata hai.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  await connectDb();
+  const user = session?.user?.email
+    ? await User.findOne({ email: session.user.email }).select("_id")
+    : null;
+
   return (
     <html
       lang="en"
@@ -34,9 +44,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Provider>
           <ReduxProvider>
-            <InitUser/>
+            <InitUser />
+            {user?._id && <SocketInitializer userId={user._id.toString()} />}
             {children}
-            </ReduxProvider>
+          </ReduxProvider>
         </Provider>
       </body>
     </html>

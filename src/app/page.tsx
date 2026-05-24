@@ -12,7 +12,6 @@ export default async function Home() {
   const session = await auth();
   await connectDb();
   const user = session?.user?.email
-  
     ? await User.findOne({ email: session.user.email })
     : null;
 

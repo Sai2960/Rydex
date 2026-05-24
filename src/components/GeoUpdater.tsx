@@ -11,7 +11,7 @@ function GeoUpdater({ userId }: { userId: string }) {
     if (!navigator.geolocation) return;
 
     socketRef.current = getSocket();
-    socketRef.current.emit("identity", userId);
+    // No identity emit here anymore — SocketInitializer handles it
 
     const watcher = navigator.geolocation.watchPosition(
       ({ coords }) => {
